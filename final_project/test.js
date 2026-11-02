@@ -18,7 +18,10 @@ test('book API, four Axios methods, authentication, ownership and concurrent req
   assert.equal(Object.keys(await methods.getAllBooks(base)).length, 10);
   assert.equal((await methods.getBooksByISBN(1, base)).title, 'Things Fall Apart');
   assert.equal(Object.keys(await methods.getBooksByAuthor('Unknown', base)).length, 4);
-  assert.equal((await methods.getBooksByTitle('Pride and Prejudice', base))['8'].author, 'Jane Austen');
+  assert.equal((await methods.getBooksByTitle('Pride and Prejudice', base))['8'].author, 'Jane Austen');  assert.deepEqual(await methods.getBooksByAuthor('No Such Author', base), {status: 404, message: 'No matching book found.'});
+  assert.deepEqual(await methods.getBooksByTitle('No Such Title', base), {status: 404, message: 'No matching book found.'});
+  assert.deepEqual(await methods.getBooksByISBN(999, base), {status: 404, message: 'No matching book found.'});
+  assert.deepEqual(await methods.getBooksByAuthor('Unknown', 'http://127.0.0.1:1'), {status: 502, message: 'Unable to reach the book service.'});
   assert.equal((await request('/isbn/__proto__')).status, 404);
   assert.equal((await request('/isbn/999')).status, 404);
   assert.equal((await request('/customer/auth/review/1', 'PUT', {review: 'no login'})).status, 401);

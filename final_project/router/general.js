@@ -25,21 +25,37 @@ general.get('/review/:isbn', (req, res) => {
   return Object.keys(book.reviews).length ? res.json(book.reviews) : res.json({message: 'No reviews found for this book.'});
 });
 
-// Four nonblocking Axios client methods for the lab's Promise/async tasks.
+// Four Axios client methods for the lab's Promise/async tasks.
 // The optional baseURL lets the same code run against the local test server.
 const client = baseURL => axios.create({baseURL, timeout: 5000, proxy: false});
+const noMatch = () => ({status: 404, message: 'No matching book found.'});
+const requestFailure = error => error.response?.status === 404
+  ? noMatch()
+  : ({status: 502, message: 'Unable to reach the book service.'});
 async function getAllBooks(baseURL = 'http://127.0.0.1:8800') {
-  const response = await client(baseURL).get('/');
-  return response.data;
+  try {
+    const response = await client(baseURL).get('/');
+    return response.data;
+  } catch (error) {
+    return requestFailure(error);
+  }
 }
 function getBooksByISBN(isbn, baseURL = 'http://127.0.0.1:8800') {
-  return client(baseURL).get(`/isbn/${encodeURIComponent(isbn)}`).then(response => response.data);
+  return client(baseURL).get(`/isbn/${encodeURIComponent(isbn)}`)
+    .then(response => response.data)
+    .catch(requestFailure);
 }
 async function getBooksByAuthor(author, baseURL = 'http://127.0.0.1:8800') {
-  const response = await client(baseURL).get(`/author/${encodeURIComponent(author)}`);
-  return response.data;
+  try {
+    const response = await client(baseURL).get(`/author/${encodeURIComponent(author)}`);
+    return Object.keys(response.data || {}).length ? response.data : noMatch();
+  } catch (error) {
+    return requestFailure(error);
+  }
 }
 function getBooksByTitle(title, baseURL = 'http://127.0.0.1:8800') {
-  return client(baseURL).get(`/title/${encodeURIComponent(title)}`).then(response => response.data);
+  return client(baseURL).get(`/title/${encodeURIComponent(title)}`)
+    .then(response => Object.keys(response.data || {}).length ? response.data : noMatch())
+    .catch(requestFailure);
 }
 module.exports = {general, getAllBooks, getBooksByISBN, getBooksByAuthor, getBooksByTitle};

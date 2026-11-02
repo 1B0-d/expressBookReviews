@@ -26,6 +26,7 @@ The application listens only on `127.0.0.1:8800` by default. `PORT` can override
 - PUT `/customer/auth/review/:isbn`: add or modify the authenticated user's review.
 - DELETE `/customer/auth/review/:isbn`: remove only that user's review.
 - Four Axios methods in `final_project/router/general.js`: all books, ISBN, author, and title. Two use async/await, two return Promises with `.then()`.
+- Axios lookups return a not-found result for empty/unknown matches and a service error result for failed requests.
 
 `npm test` passed an integration suite covering the four Axios methods, unknown books, unauthenticated writes, duplicate registration, wrong passwords, two separate sessions, ownership despite a forged username field, modifying and deleting one's own review, empty reviews, and concurrent requests.
 
