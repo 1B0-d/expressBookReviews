@@ -1,43 +1,45 @@
+// AI assistance disclosure: Codex assisted with code, tests and course evidence.
+// The original IBM starter booksdb.js is retained without content changes.
 const express = require('express');
-let books = require("./booksdb.js");
-let isValid = require("./auth_users.js").isValid;
-let users = require("./auth_users.js").users;
-const public_users = express.Router();
-
-
-public_users.post("/register", (req,res) => {
-  //Write your code here
-  return res.status(300).json({message: "Yet to be implemented"});
+const axios = require('axios');
+const books = require('./booksdb');
+const {register} = require('./auth_users');
+const general = express.Router();
+general.post('/register', (req, res) => {
+  const result = register(req.body.username, req.body.password);
+  return res.status(result.status).json({message: result.message});
+});
+general.get('/', (req, res) => res.json(books));
+general.get('/isbn/:isbn', (req, res) => {
+  const book = Object.hasOwn(books, req.params.isbn) ? books[req.params.isbn] : null;
+  return book ? res.json(book) : res.status(404).json({message: 'Book not found.'});
+});
+const matchingBooks = (field, value) => Object.fromEntries(
+  Object.entries(books).filter(([, book]) => book[field].toLowerCase() === value.toLowerCase())
+);
+general.get('/author/:author', (req, res) => res.json(matchingBooks('author', req.params.author)));
+general.get('/title/:title', (req, res) => res.json(matchingBooks('title', req.params.title)));
+general.get('/review/:isbn', (req, res) => {
+  const book = Object.hasOwn(books, req.params.isbn) ? books[req.params.isbn] : null;
+  if (!book) return res.status(404).json({message: 'Book not found.'});
+  return Object.keys(book.reviews).length ? res.json(book.reviews) : res.json({message: 'No reviews found for this book.'});
 });
 
-// Get the book list available in the shop
-public_users.get('/',function (req, res) {
-  //Write your code here
-  return res.status(300).json({message: "Yet to be implemented"});
-});
-
-// Get book details based on ISBN
-public_users.get('/isbn/:isbn',function (req, res) {
-  //Write your code here
-  return res.status(300).json({message: "Yet to be implemented"});
- });
-  
-// Get book details based on author
-public_users.get('/author/:author',function (req, res) {
-  //Write your code here
-  return res.status(300).json({message: "Yet to be implemented"});
-});
-
-// Get all books based on title
-public_users.get('/title/:title',function (req, res) {
-  //Write your code here
-  return res.status(300).json({message: "Yet to be implemented"});
-});
-
-//  Get book review
-public_users.get('/review/:isbn',function (req, res) {
-  //Write your code here
-  return res.status(300).json({message: "Yet to be implemented"});
-});
-
-module.exports.general = public_users;
+// Four nonblocking Axios client methods for the lab's Promise/async tasks.
+// The optional baseURL lets the same code run against the local test server.
+const client = baseURL => axios.create({baseURL, timeout: 5000, proxy: false});
+async function getAllBooks(baseURL = 'http://127.0.0.1:8800') {
+  const response = await client(baseURL).get('/');
+  return response.data;
+}
+function getBooksByISBN(isbn, baseURL = 'http://127.0.0.1:8800') {
+  return client(baseURL).get(`/isbn/${encodeURIComponent(isbn)}`).then(response => response.data);
+}
+async function getBooksByAuthor(author, baseURL = 'http://127.0.0.1:8800') {
+  const response = await client(baseURL).get(`/author/${encodeURIComponent(author)}`);
+  return response.data;
+}
+function getBooksByTitle(title, baseURL = 'http://127.0.0.1:8800') {
+  return client(baseURL).get(`/title/${encodeURIComponent(title)}`).then(response => response.data);
+}
+module.exports = {general, getAllBooks, getBooksByISBN, getBooksByAuthor, getBooksByTitle};

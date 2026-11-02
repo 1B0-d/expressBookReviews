@@ -1,4 +1,4 @@
-# Distribution / packaging
-node_modules
-
-
+node_modules/
+*.cookies
+.env
+evidence/
